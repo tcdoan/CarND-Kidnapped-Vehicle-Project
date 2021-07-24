@@ -93,7 +93,8 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
 	for (int i = 0; i < observations.size(); ++i)
 	{
 		LandmarkObs obs = observations[i];
-		LandmarkObs closest = std::min_element
+
+		LandmarkObs closest = *std::min_element
 		(
 			predicted.begin(), 
 			predicted.end(),
