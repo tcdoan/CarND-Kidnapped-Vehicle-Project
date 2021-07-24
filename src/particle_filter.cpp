@@ -23,7 +23,6 @@ using std::vector;
 using std::sin;
 using std::cos;
 
-
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
   /**
    * TODO: Set the number of particles. Initialize all particles to 
@@ -34,7 +33,6 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
    *   (and others in this file).
    */
   num_particles = 1000;  // TODO: Set the number of particles
-  particles.resize(num_particles);
   std::random_device rd{};
   std::mt19937_64 gen{ rd() };
   std::normal_distribution<double> dist_x(x, std[0]);
@@ -48,7 +46,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	  p.y = dist_y(gen);
 	  p.theta = dist_theta(gen);
 	  p.weight = 1.0;
-	  particles.emplace_back(p);
+	  particles.push_back(p);
   }
 }
 
@@ -92,7 +90,24 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
    *   probably find it useful to implement this method and use it as a helper 
    *   during the updateWeights phase.
    */
-
+	for (int i = 0; i < observations.size(); ++i)
+	{
+		LandmarkObs obs = observations[i];
+		LandmarkObs closest = std::min_element
+		(
+			predicted.begin(), 
+			predicted.end(),
+			[&obs]
+			(
+				const LandmarkObs& obs1, 
+				const LandmarkObs& obs2
+			) 
+			{
+				return dist(obs.x, obs.y, obs1.x, obs1.y) < dist(obs.x, obs.y, obs2.x, obs2.y);
+			}
+		);
+		observations[i].id = closest.id;
+	}
 }
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
