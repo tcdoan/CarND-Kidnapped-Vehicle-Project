@@ -166,9 +166,12 @@ string ParticleFilter::getAssociations(Particle best) {
 string ParticleFilter::getSenseCoord(Particle best, string coord) {
   vector<double> v;
 
-  if (coord == "X") {
+  if (coord == "X") 
+  {
     v = best.sense_x;
-  } else {
+  } 
+  else 
+  {
     v = best.sense_y;
   }
 
