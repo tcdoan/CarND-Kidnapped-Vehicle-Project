@@ -121,9 +121,9 @@ class ParticleFilter {
   // Vector of weights of all particles
   std::vector<double> weights; 
 
-  void toLandmarkObs(const Map& map, vector<LandmarkObs>& landmarkObs);
+  void toLandmarkObs(const Map& map, std::vector<LandmarkObs>& landmarkObs);
 
-  void car2MapCoordinateTransform(const Particle& p, const vector<LandmarkObs> &observations, vector<LandmarkObs>& mapBasedObs);
+  void car2MapCoordinateTransform(const Particle& p, const std::vector<LandmarkObs> &observations, std::vector<LandmarkObs>& mapBasedObs);
 
   double multiv_prob(double sig_x, double sig_y, double x_obs, double y_obs,
                     double mu_x, double mu_y);

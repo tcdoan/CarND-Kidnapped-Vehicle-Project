@@ -149,7 +149,7 @@ void ParticleFilter::updateWeights(
     // For each observation find the closest landmark and copy its landmark id
     dataAssociation(landmarkObs, mapBasedObs);
 
-	weight = 1.0;
+	  double weight = 1.0;
     // Compute the prob for each observation
     for (auto obs : mapBasedObs)
     {
@@ -161,7 +161,8 @@ void ParticleFilter::updateWeights(
       double signmaY = std_landmark[1];
       weight *= multiv_prob(sigmaX, signmaY, x, y, muX, muY);
     }
-	p.weight = weight;
+    
+	  p.weight = weight;
   }
 }
 
@@ -181,7 +182,7 @@ void ParticleFilter::car2MapCoordinateTransform(
   }
 }
 
-void ParticleFilter::toLandmarkObs(const Map& map, vector<LandmarkObs>& landmarkObs)
+void ParticleFilter::toLandmarkObs(const Map& map, std::vector<LandmarkObs>& landmarkObs)
 {
   landmarkObs.clear();
   for (auto lm : map.landmark_list)
@@ -205,12 +206,12 @@ void ParticleFilter::resample()
 	std::random_device rd;
 	std::mt19937 gen(rd());
 
-	vector<double> weights;
+	std::vector<double> weights;
 	for (Particle p : particles)
 	{
 		weights.push_back(p.weight);
 	}
-	std::discrete_distribution<double> d(weights);
+	std::discrete_distribution<double> d(weights.begin(), weights.end());
 
 	std::vector<Particle> newParticles;
 	for (int i = 0; i < num_particles; ++i)
@@ -219,7 +220,7 @@ void ParticleFilter::resample()
 		newParticles.push_back(particles[idx]);
 	}
 
-	particles = new newParticles;
+	particles = newParticles;
 }
 
 void ParticleFilter::SetAssociations(Particle& particle, 
