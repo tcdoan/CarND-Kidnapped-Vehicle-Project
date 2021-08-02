@@ -23,7 +23,8 @@ using std::vector;
 using std::sin;
 using std::cos;
 
-void ParticleFilter::init(double x, double y, double theta, double std[]) {
+void ParticleFilter::init(double x, double y, double theta, double std[]) 
+{
   /**
    * TODO: Set the number of particles. Initialize all particles to 
    *   first position (based on estimates of x, y, theta and their uncertainties
@@ -51,7 +52,8 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 }
 
 void ParticleFilter::prediction(double delta_t, double std_pos[], 
-                                double velocity, double yaw_rate) {
+                                double velocity, double yaw_rate) 
+{
   /**
    * TODO: Add measurements to each particle and add random Gaussian noise.
    * NOTE: When adding noise you may find std::normal_distribution 
@@ -81,8 +83,10 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
 	}
 }
 
-void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted, 
-                                     vector<LandmarkObs>& observations) {
+void ParticleFilter::dataAssociation(
+	vector<LandmarkObs> predicted, 
+    vector<LandmarkObs>& observations)
+{
   /**
    * TODO: Find the predicted measurement that is closest to each 
    *   observed measurement and assign the observed measurement to this 
@@ -111,9 +115,12 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
 	}
 }
 
-void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
-                                   const vector<LandmarkObs> &observations, 
-                                   const Map &map_landmarks) {
+void ParticleFilter::updateWeights(
+	double sensor_range, 
+	double std_landmark[], 
+    const vector<LandmarkObs> &observations, 
+	const Map &map_landmarks) 
+{
   /**
    * TODO: Update the weights of each particle using a mult-variate Gaussian 
    *   distribution. You can read more about this distribution here: 
@@ -142,24 +149,20 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     // For each observation find the closest landmark and copy its landmark id
     dataAssociation(landmarkObs, mapBasedObs);
 
+	weight = 1.0;
     // Compute the prob for each observation
     for (auto obs : mapBasedObs)
     {
       double muX = obs.x;
       double muY  = obs.y;
-      double x = map_landmarks.landmark_list[obs.id].x_f;
-      double y = map_landmarks.landmark_list[obs.id].y_f;
+      double x = map_landmarks.landmark_list[obs.id-1].x_f;
+      double y = map_landmarks.landmark_list[obs.id-1].y_f;
       double sigmaX = std_landmark[0];
       double signmaY = std_landmark[1];
-      double weight = multiv_prob(sigmaX, signmaY, x, y, muX, muY);
-            
+      weight *= multiv_prob(sigmaX, signmaY, x, y, muX, muY);
     }
-
-    p.weight = 1.0;
-
+	p.weight = weight;
   }
-
-
 }
 
 void ParticleFilter::car2MapCoordinateTransform(
@@ -199,7 +202,24 @@ void ParticleFilter::resample()
    * NOTE: You may find std::discrete_distribution helpful here.
    *   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
    */
+	std::random_device rd;
+	std::mt19937 gen(rd());
 
+	vector<double> weights;
+	for (Particle p : particles)
+	{
+		weights.push_back(p.weight);
+	}
+	std::discrete_distribution<double> d(weights);
+
+	std::vector<Particle> newParticles;
+	for (int i = 0; i < num_particles; ++i)
+	{
+		int idx = d(gen);
+		newParticles.push_back(particles[idx]);
+	}
+
+	particles = new newParticles;
 }
 
 void ParticleFilter::SetAssociations(Particle& particle, 
@@ -216,7 +236,8 @@ void ParticleFilter::SetAssociations(Particle& particle,
   particle.sense_y = sense_y;
 }
 
-string ParticleFilter::getAssociations(Particle best) {
+string ParticleFilter::getAssociations(Particle best) 
+{
   vector<int> v = best.associations;
   std::stringstream ss;
   copy(v.begin(), v.end(), std::ostream_iterator<int>(ss, " "));
@@ -225,7 +246,8 @@ string ParticleFilter::getAssociations(Particle best) {
   return s;
 }
 
-string ParticleFilter::getSenseCoord(Particle best, string coord) {
+string ParticleFilter::getSenseCoord(Particle best, string coord) 
+{
   vector<double> v;
 
   if (coord == "X") 
@@ -244,8 +266,14 @@ string ParticleFilter::getSenseCoord(Particle best, string coord) {
   return s;
 }
 
-double ParticleFilter::multiv_prob(double sig_x, double sig_y, double x_obs, double y_obs,
-                   double mu_x, double mu_y) {
+double ParticleFilter::multiv_prob(
+	double sig_x, 
+	double sig_y, 
+	double x_obs, 
+	double y_obs,
+	double mu_x, 
+	double mu_y) 
+{
   // calculate normalization term
   double gauss_norm;
   gauss_norm = 1 / (2 * M_PI * sig_x * sig_y);
