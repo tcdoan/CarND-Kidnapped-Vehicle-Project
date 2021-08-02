@@ -71,6 +71,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
 		double y = particles[i].y;
 		double theta = particles[i].theta;
 
+    // TODO: Guard when yaw_rate is 0.
 		double newX = dist_x(gen) + x + (velocity / yaw_rate) * (sin(theta + yaw_rate*delta_t) - sin(theta));
 		double newY = dist_y(gen) + y + (velocity / yaw_rate) * (cos(theta) + cos(theta + yaw_rate * delta_t));
 		double newTheta = dist_theta(gen) + theta + yaw_rate * delta_t;
@@ -93,7 +94,6 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
 	for (int i = 0; i < observations.size(); ++i)
 	{
 		LandmarkObs obs = observations[i];
-
 		LandmarkObs closest = *std::min_element
 		(
 			predicted.begin(), 
@@ -128,9 +128,71 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
    *   (look at equation 3.33) http://planning.cs.uiuc.edu/node99.html
    */
 
+  vector<LandmarkObs> landmarkObs;
+  toLandmarkObs(map_landmarks, landmarkObs);
+
+  for (int i = 0; i < particles.size(); i++) 
+  {
+    Particle p = particles[i];
+
+    // mapBasedObs are observations in map/world coordinates
+    vector<LandmarkObs> mapBasedObs;
+    car2MapCoordinateTransform(p, observations, mapBasedObs);
+
+    // For each observation find the closest landmark and copy its landmark id
+    dataAssociation(landmarkObs, mapBasedObs);
+
+    // Compute the prob for each observation
+    for (auto obs : mapBasedObs)
+    {
+      double muX = obs.x;
+      double muY  = obs.y;
+      double x = map_landmarks.landmark_list[obs.id].x_f;
+      double y = map_landmarks.landmark_list[obs.id].y_f;
+      double sigmaX = std_landmark[0];
+      double signmaY = std_landmark[1];
+      double weight = multiv_prob(sigmaX, signmaY, x, y, muX, muY);
+            
+    }
+
+    p.weight = 1.0;
+
+  }
+
+
 }
 
-void ParticleFilter::resample() {
+void ParticleFilter::car2MapCoordinateTransform(
+    const Particle& p, 
+    const vector<LandmarkObs> &observations, 
+    vector<LandmarkObs>& mapBasedObs)
+{
+  mapBasedObs.clear();
+  for (auto obs : observations) 
+  {
+    LandmarkObs transformed;
+    transformed.id = obs.id;
+    transformed.x =  p.x + (cos(p.theta) * obs.x) - (sin(p.theta) * obs.y);
+    transformed.y =  p.y + (sin(p.theta) * obs.x) + (cos(p.theta) * obs.y);
+    mapBasedObs.push_back(transformed);
+  }
+}
+
+void ParticleFilter::toLandmarkObs(const Map& map, vector<LandmarkObs>& landmarkObs)
+{
+  landmarkObs.clear();
+  for (auto lm : map.landmark_list)
+  {
+    LandmarkObs obs;
+    obs.id = lm.id_i;
+    obs.x = lm.x_f;
+    obs.y = lm.y_f;
+    landmarkObs.push_back(obs);
+  }
+}
+
+void ParticleFilter::resample() 
+{
   /**
    * TODO: Resample particles with replacement with probability proportional 
    *   to their weight. 
@@ -180,4 +242,22 @@ string ParticleFilter::getSenseCoord(Particle best, string coord) {
   string s = ss.str();
   s = s.substr(0, s.length()-1);  // get rid of the trailing space
   return s;
+}
+
+double ParticleFilter::multiv_prob(double sig_x, double sig_y, double x_obs, double y_obs,
+                   double mu_x, double mu_y) {
+  // calculate normalization term
+  double gauss_norm;
+  gauss_norm = 1 / (2 * M_PI * sig_x * sig_y);
+
+  // calculate exponent
+  double exponent;
+  exponent = (pow(x_obs - mu_x, 2) / (2 * pow(sig_x, 2)))
+               + (pow(y_obs - mu_y, 2) / (2 * pow(sig_y, 2)));
+    
+  // calculate weight using normalization terms and exponent
+  double weight;
+  weight = gauss_norm * exp(-exponent);
+    
+  return weight;
 }
