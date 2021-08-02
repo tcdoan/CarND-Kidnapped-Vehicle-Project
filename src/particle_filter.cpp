@@ -39,15 +39,14 @@ void ParticleFilter::init(double x, double y, double theta, double std[])
   std::normal_distribution<double> dist_x(x, std[0]);
   std::normal_distribution<double> dist_y(y, std[1]);
   std::normal_distribution<double> dist_theta(theta, std[2]);
+  particles.resize(num_particles);
 
   for (int i = 0; i < num_particles; ++i)
   {
-	  Particle p;
-	  p.x = dist_x(gen);
-	  p.y = dist_y(gen);
-	  p.theta = dist_theta(gen);
-	  p.weight = 1.0;
-	  particles.push_back(p);
+	  particles[i].x = dist_x(gen);
+	  particles[i].y = dist_y(gen);
+	  particles[i].theta = dist_theta(gen);
+	  particles[i].weight = 1.0;
   }
 }
 
@@ -161,8 +160,9 @@ void ParticleFilter::updateWeights(
       double signmaY = std_landmark[1];
       weight *= multiv_prob(sigmaX, signmaY, x, y, muX, muY);
     }
-    
+
 	  p.weight = weight;
+    // std::cout << p.weight;
   }
 }
 
@@ -207,7 +207,7 @@ void ParticleFilter::resample()
 	std::mt19937 gen(rd());
 
 	std::vector<double> weights;
-	for (Particle p : particles)
+	for (auto p : particles)
 	{
 		weights.push_back(p.weight);
 	}
